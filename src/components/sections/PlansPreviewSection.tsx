@@ -1,6 +1,44 @@
+'use client'
+
 import Link from 'next/link'
 import { Check, ArrowRight, Star, CreditCard, Receipt, Globe } from 'lucide-react'
 import { plans } from '@/data/plans'
+
+async function startCheckout(priceId?: string) {
+  // segurança extra
+  if (!priceId) {
+    alert('PriceId não configurado. Verifica NEXT_PUBLIC_PRICE_* no .env.local e na Vercel.')
+    return
+  }
+
+  console.log('Starting checkout with priceId:', priceId)
+
+  const res = await fetch('/api/create-checkout-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ priceId }),
+  })
+
+  let data: any = null
+  try {
+    data = await res.json()
+  } catch {
+    // se der erro de parse, ainda assim mostramos status
+  }
+
+  if (!res.ok) {
+    console.error('Checkout API error:', res.status, data)
+    alert(`Erro ao criar checkout (${res.status}). Veja o console.`)
+    return
+  }
+
+  if (data?.url) {
+    window.location.href = data.url
+  } else {
+    console.error('Stripe checkout error: missing url', data)
+    alert('Não foi possível abrir o checkout. Veja o console.')
+  }
+}
 
 export function PlansPreviewSection() {
   return (
@@ -17,8 +55,9 @@ export function PlansPreviewSection() {
         </h2>
 
         <p className="section-subtitle max-w-2xl mx-auto">
-          All plans include managed hosting + domain (.com or .pt) + maintenance.
-          Cancel later with 30 days notice. Minimum commitment: <span className="text-ice">6 months</span> (Pro: <span className="text-ice">12 months</span>).
+          All plans include managed hosting + domain (.com or .pt) + maintenance. Cancel later with 30 days
+          notice. Minimum commitment: <span className="text-ice">6 months</span> (Pro:{' '}
+          <span className="text-ice">12 months</span>).
         </p>
 
         {/* Micro-proof row */}
@@ -46,11 +85,7 @@ export function PlansPreviewSection() {
           return (
             <div
               key={plan.id}
-              className={[
-                'pp-pricing-card',
-                'group',
-                plan.popular ? 'pp-pricing-card--popular' : '',
-              ].join(' ')}
+              className={['pp-pricing-card', 'group', plan.popular ? 'pp-pricing-card--popular' : ''].join(' ')}
             >
               {/* Popular badge */}
               {plan.popular && (
@@ -64,18 +99,14 @@ export function PlansPreviewSection() {
               <div className="mb-6">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-mono text-xs text-gray-400 uppercase tracking-widest mb-2">
-                      {plan.name}
-                    </div>
+                    <div className="font-mono text-xs text-gray-400 uppercase tracking-widest mb-2">{plan.name}</div>
 
                     <div className="flex items-end gap-1 mb-1">
                       <span className="font-sans font-bold text-4xl text-ice">{plan.price}€</span>
                       <span className="text-gray-500 font-body mb-1">/month</span>
                     </div>
 
-                    <p className="text-sm text-gray-400 font-body leading-relaxed">
-                      {plan.tagline}
-                    </p>
+                    <p className="text-sm text-gray-400 font-body leading-relaxed">{plan.tagline}</p>
                   </div>
 
                   {/* commitment pill */}
@@ -105,8 +136,9 @@ export function PlansPreviewSection() {
                   Included: hosting, domain, SSL, backups & maintenance.
                 </div>
 
-                <Link
-                  href="/plans"
+                <button
+                  type="button"
+                  onClick={() => startCheckout((plan as any).stripePriceId)}
                   className={[
                     'pp-btn',
                     'pp-btn--lg',
@@ -116,7 +148,7 @@ export function PlansPreviewSection() {
                   ].join(' ')}
                 >
                   {plan.cta || 'See plan details'}
-                </Link>
+                </button>
               </div>
             </div>
           )
