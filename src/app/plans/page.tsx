@@ -1,3 +1,4 @@
+import { StripeCheckoutButton } from '@/components/StripeCheckoutButton'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Check, X, Minus, Star, ArrowRight, Zap, Search, Mail, TrendingUp, Layout } from 'lucide-react'
@@ -127,14 +128,14 @@ export default function PlansPage() {
                 ))}
               </ul>
 
-              <Link
-                href="/how-it-works"
-                className={`w-full text-center py-4 rounded-xl font-sans font-semibold transition-all duration-200 ${
-                  plan.popular ? 'btn-primary' : 'btn-secondary'
-                }`}
-              >
-                {plan.cta}
-              </Link>
+              <StripeCheckoutButton
+                priceId={(plan as any).stripePriceId}
+               className={`w-full text-center py-4 rounded-xl font-sans font-semibold transition-all duration-200 ${
+               plan.popular ? 'btn-primary' : 'btn-secondary'
+   }`}
+>
+  {plan.cta}
+</StripeCheckoutButton>
             </div>
           ))}
         </div>
